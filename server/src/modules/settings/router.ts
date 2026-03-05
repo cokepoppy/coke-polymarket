@@ -9,6 +9,8 @@ export const settingsRouter = Router();
 const credentialSchema = z.object({
   keyId: z.string().optional(),
   apiKey: z.string().min(8),
+  secret: z.string().min(8),
+  passphrase: z.string().min(8),
 });
 
 function encryptCredential(value: string): string {
@@ -20,8 +22,9 @@ function encryptCredential(value: string): string {
   return Buffer.concat([iv, tag, encrypted]).toString('base64');
 }
 
-settingsRouter.get('/credentials/polymarket', (_req, res) => {
-  res.json({ success: true, data: appStore.getCredentialStatus() });
+settingsRouter.get('/credentials/polymarket', async (_req, res) => {
+  const status = await appStore.getCredentialStatusResolved();
+  res.json({ success: true, data: status });
 });
 
 settingsRouter.put('/credentials/polymarket', async (req, res) => {
@@ -38,8 +41,15 @@ settingsRouter.put('/credentials/polymarket', async (req, res) => {
     return;
   }
 
-  const ciphertext = encryptCredential(parsed.data.apiKey);
-  const status = await appStore.saveCredential({ keyId: parsed.data.keyId, apiKey: ciphertext });
+  const ciphertext = JSON.stringify({
+    version: 1,
+    apiKey: encryptCredential(parsed.data.apiKey),
+    secret: encryptCredential(parsed.data.secret),
+    passphrase: encryptCredential(parsed.data.passphrase),
+    savedAt: Date.now(),
+  });
+
+  const status = await appStore.saveCredential({ keyId: parsed.data.keyId, ciphertext });
 
   res.json({
     success: true,

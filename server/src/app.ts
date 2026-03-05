@@ -11,6 +11,7 @@ import { riskRouter } from './modules/risk/router.js';
 import { systemRouter } from './modules/system/router.js';
 import { settingsRouter } from './modules/settings/router.js';
 import { tradesRouter } from './modules/trades/router.js';
+import { tradingRouter } from './modules/trading/router.js';
 import { mysqlClient } from './db/mysql.js';
 
 export function createApp() {
@@ -56,6 +57,7 @@ export function createApp() {
   api.use('/risk', riskRouter);
   api.use('/system', systemRouter);
   api.use('/settings', settingsRouter);
+  api.use('/trading', tradingRouter);
 
   app.use(env.apiPrefix, api);
 

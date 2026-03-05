@@ -212,6 +212,8 @@ export class AppStore extends EventEmitter {
 
   private riskEvents: RiskEvent[] = [];
   private credentialStatus: CredentialStatus = { provider: 'polymarket', configured: false };
+  private credentialCiphertext: string | null = null;
+  private credentialKeyId: string | null = null;
 
   getEngineState(): EngineState {
     return this.engineState;
@@ -432,18 +434,68 @@ export class AppStore extends EventEmitter {
     return { ...this.credentialStatus };
   }
 
-  async saveCredential(payload: { keyId?: string; apiKey: string }): Promise<CredentialStatus> {
+  async getCredentialStatusResolved(): Promise<CredentialStatus> {
+    if (this.credentialStatus.configured) {
+      return this.getCredentialStatus();
+    }
+
+    const record = await repository.getCredential('polymarket').catch(() => null);
+    if (!record) {
+      return this.getCredentialStatus();
+    }
+
+    this.credentialCiphertext = record.ciphertext;
+    this.credentialKeyId = record.keyId;
+    this.credentialStatus = {
+      provider: 'polymarket',
+      configured: true,
+      updatedAt: record.updatedAt,
+    };
+
+    return this.getCredentialStatus();
+  }
+
+  async getCredentialPayload(): Promise<{ keyId?: string; ciphertext: string } | null> {
+    if (this.credentialCiphertext) {
+      return {
+        keyId: this.credentialKeyId ?? undefined,
+        ciphertext: this.credentialCiphertext,
+      };
+    }
+
+    const record = await repository.getCredential('polymarket').catch(() => null);
+    if (!record) {
+      return null;
+    }
+
+    this.credentialCiphertext = record.ciphertext;
+    this.credentialKeyId = record.keyId;
+    this.credentialStatus = {
+      provider: 'polymarket',
+      configured: true,
+      updatedAt: record.updatedAt,
+    };
+
+    return {
+      keyId: record.keyId ?? undefined,
+      ciphertext: record.ciphertext,
+    };
+  }
+
+  async saveCredential(payload: { keyId?: string; ciphertext: string }): Promise<CredentialStatus> {
     const updatedAt = Date.now();
     this.credentialStatus = {
       provider: 'polymarket',
       configured: true,
       updatedAt,
     };
+    this.credentialCiphertext = payload.ciphertext;
+    this.credentialKeyId = payload.keyId ?? null;
 
     this.pushLog('INFO', 'SYSTEM', 'Polymarket credentials updated');
 
     await repository
-      .upsertCredential('polymarket', payload.keyId ?? null, payload.apiKey)
+      .upsertCredential('polymarket', payload.keyId ?? null, payload.ciphertext)
       .catch(() => undefined);
 
     return this.getCredentialStatus();

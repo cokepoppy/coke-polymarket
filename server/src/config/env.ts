@@ -29,6 +29,12 @@ export const env = {
 
   appSecret: process.env.APP_SECRET ?? 'insecure-dev-secret',
   tickIntervalMs: toNumber(process.env.TICK_INTERVAL_MS, 1000),
+
+  polyClobHost: process.env.POLY_CLOB_HOST ?? 'https://clob.polymarket.com',
+  polyChainId: toNumber(process.env.POLY_CHAIN_ID, 137),
+  polySignatureType: toNumber(process.env.POLY_SIGNATURE_TYPE, 1),
+  polyPrivateKey: process.env.POLY_PRIVATE_KEY ?? '',
+  polyFunderAddress: process.env.POLY_FUNDER_ADDRESS ?? '',
 };
 
 export type Env = typeof env;

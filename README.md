@@ -13,9 +13,10 @@
 ## 前端运行
 
 1. `cd frontend`
-2. `npm install`
-3. `npm run dev`
-4. 打开 `http://localhost:3000`
+2. `cp .env.example .env.local`
+3. `npm install`
+4. `npm run dev`
+5. 打开 `http://localhost:3000`
 
 ## 后端运行
 

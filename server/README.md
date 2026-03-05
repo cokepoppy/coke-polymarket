@@ -25,6 +25,11 @@ Key variables:
 - `MYSQL_ENABLED` (set `false` to run pure in-memory)
 - `AUTO_MIGRATE` (run `sql/init.sql` automatically when MySQL is ready)
 - `APP_SECRET` (used to encrypt credential payloads)
+- `POLY_CLOB_HOST` (default `https://clob.polymarket.com`)
+- `POLY_CHAIN_ID` (default `137`, supports `137` and `80002`)
+- `POLY_SIGNATURE_TYPE` (default `1`; `0=EOA`, `1=POLY_PROXY`, `2=POLY_GNOSIS_SAFE`)
+- `POLY_PRIVATE_KEY` (required for placing signed orders)
+- `POLY_FUNDER_ADDRESS` (optional if derivable from private key)
 
 ## 3. Project Structure
 
@@ -65,6 +70,36 @@ server/
 - `GET /api/v1/system/logs?limit=200`
 - `GET /api/v1/settings/credentials/polymarket`
 - `PUT /api/v1/settings/credentials/polymarket`
+- `GET /api/v1/trading/status`
+- `POST /api/v1/trading/auth/test`
+- `GET /api/v1/trading/open-orders`
+- `POST /api/v1/trading/order`
+- `DELETE /api/v1/trading/orders/all`
+
+Credential payload for `PUT /api/v1/settings/credentials/polymarket`:
+
+```json
+{
+  "keyId": "optional-key-id",
+  "apiKey": "builder-api-key",
+  "secret": "builder-secret",
+  "passphrase": "builder-passphrase"
+}
+```
+
+Limit order payload for `POST /api/v1/trading/order`:
+
+```json
+{
+  "tokenId": "1234567890",
+  "side": "BUY",
+  "price": 0.45,
+  "size": 10,
+  "orderType": "GTC",
+  "postOnly": false,
+  "deferExec": false
+}
+```
 
 ## 5. WS Channels
 

@@ -94,6 +94,27 @@ class Repository {
       [provider, keyId, ciphertext],
     );
   }
+
+  async getCredential(
+    provider: string,
+  ): Promise<{ keyId: string | null; ciphertext: string; updatedAt: number } | null> {
+    const rows = await mysqlClient.query<{ key_id: string | null; ciphertext: string; updated_at_ms: number }>(
+      `SELECT key_id, ciphertext, UNIX_TIMESTAMP(updated_at) * 1000 AS updated_at_ms
+       FROM api_credentials
+       WHERE provider = ?
+       LIMIT 1`,
+      [provider],
+    );
+
+    const row = rows[0];
+    if (!row) return null;
+
+    return {
+      keyId: row.key_id,
+      ciphertext: row.ciphertext,
+      updatedAt: row.updated_at_ms,
+    };
+  }
 }
 
 export const repository = new Repository();
