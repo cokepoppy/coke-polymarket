@@ -3,7 +3,7 @@ import path from 'node:path';
 import { chromium } from '@playwright/test';
 
 const baseUrl = process.env.SCREENSHOT_BASE_URL ?? 'http://127.0.0.1:3000';
-const outDir = path.resolve(process.cwd(), 'docs/screenshots');
+const outDir = path.resolve(process.cwd(), '../docs/screenshots');
 
 async function capture() {
   await fs.mkdir(outDir, { recursive: true });

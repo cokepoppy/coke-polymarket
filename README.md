@@ -2,32 +2,40 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# coke-polymarket
 
-This contains everything you need to run your app locally.
+项目已拆分为前后端目录：
 
-View your app in AI Studio: https://ai.studio/apps/3ca997c1-8e04-46ce-a95c-65721a2ac682
+- `frontend/`: Vite + React + TypeScript 前端
+- `server/`: Express + TypeScript 后端（MySQL 可选）
+- `docs/`: 设计与技术方案文档
 
-## Run Locally
+## 前端运行
 
-**Prerequisites:**  Node.js
+1. `cd frontend`
+2. `npm install`
+3. `npm run dev`
+4. 打开 `http://localhost:3000`
 
+## 后端运行
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1. `cd server`
+2. `cp .env.example .env`
+3. `npm install`
+4. 可选：`docker compose up -d mysql`
+5. `npm run dev`
+6. 健康检查：`http://localhost:8080/healthz`
 
 ## Frontend E2E tests
 
-1. Install dependencies:
+1. `cd frontend`
+2. Install dependencies:
    `npm install`
-2. Install Playwright browser (first run only):
+3. Install Playwright browser (first run only):
    `npx playwright install chromium`
-3. Run headless e2e:
+4. Run headless e2e:
    `npm run test:e2e`
-4. Run headed e2e:
+5. Run headed e2e:
    `npm run test:e2e:headed`
 
 ## Screenshots
