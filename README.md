@@ -29,3 +29,21 @@ View your app in AI Studio: https://ai.studio/apps/3ca997c1-8e04-46ce-a95c-65721
    `npm run test:e2e`
 4. Run headed e2e:
    `npm run test:e2e:headed`
+
+## Screenshots
+
+### Dashboard
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Live Markets
+
+![Live Markets](docs/screenshots/live-markets.png)
+
+### System Health
+
+![System Health](docs/screenshots/system-health.png)
+
+### System Logs
+
+![System Logs](docs/screenshots/system-logs.png)
