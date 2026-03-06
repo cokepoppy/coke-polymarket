@@ -15,10 +15,20 @@ async function capture() {
   await page.waitForTimeout(800);
   await page.screenshot({ path: path.join(outDir, 'dashboard.png') });
 
+  await page.getByRole('button', { name: 'Portfolio & Positions' }).click();
+  await page.getByText('Active Positions').waitFor({ state: 'visible' });
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: path.join(outDir, 'portfolio.png') });
+
   await page.getByRole('button', { name: 'Live Markets' }).click();
   await page.getByRole('heading', { name: 'Live Market Feeds' }).waitFor({ state: 'visible' });
   await page.waitForTimeout(500);
   await page.screenshot({ path: path.join(outDir, 'live-markets.png') });
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByText('Execution Mode').waitFor({ state: 'visible' });
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: path.join(outDir, 'settings-paper-trading.png') });
 
   await page.getByRole('button', { name: 'System Health' }).click();
   await page.getByText('Real-time Infrastructure Metrics').waitFor({ state: 'visible' });

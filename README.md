@@ -1,14 +1,18 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+![OpenClaw PolyMarket Dashboard](docs/screenshots/dashboard.png)
 
-# coke-polymarket
+# OpenClaw PolyMarket
 
 项目已拆分为前后端目录：
 
 - `frontend/`: Vite + React + TypeScript 前端
 - `server/`: Express + TypeScript 后端（MySQL 可选）
 - `docs/`: 设计与技术方案文档
+
+当前默认执行模式是实时行情驱动的 `paper trading`:
+
+- 市场数据来自 Polymarket 实时接口
+- 策略成交和资金使用本地模拟账户
+- 前端包含页面级和模拟交易级 E2E 测试
 
 ## 前端运行
 
@@ -41,13 +45,17 @@
 
 ## Screenshots
 
-### Dashboard
+### Portfolio
 
-![Dashboard](docs/screenshots/dashboard.png)
+![Portfolio](docs/screenshots/portfolio.png)
 
 ### Live Markets
 
 ![Live Markets](docs/screenshots/live-markets.png)
+
+### Settings / Paper Trading
+
+![Settings / Paper Trading](docs/screenshots/settings-paper-trading.png)
 
 ### System Health
 
