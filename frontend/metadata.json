@@ -1,5 +1,5 @@
 {
-  "name": "OpenClaw AI Trading Dashboard",
+  "name": "OpenClaw PolyMarket",
   "description": "A dashboard for an automated AI trading bot operating on decentralized prediction markets like Polymarket.",
   "requestFramePermissions": []
 }

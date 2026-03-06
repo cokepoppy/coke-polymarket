@@ -1,8 +1,10 @@
 import net from 'node:net';
 import { spawn } from 'node:child_process';
 
-const host = '127.0.0.1';
-const port = 4173;
+const frontendHost = '127.0.0.1';
+const frontendPort = 4173;
+const backendHost = '127.0.0.1';
+const backendPort = 8091;
 const timeoutMs = 60_000;
 const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
@@ -33,34 +35,50 @@ function waitForPort({ host, port, timeoutMs }) {
   });
 }
 
+function kill(proc) {
+  if (!proc || proc.killed) return;
+  proc.kill('SIGTERM');
+}
+
 async function run() {
-  const devServer = spawn(
+  const backendBaseUrl = `http://${backendHost}:${backendPort}`;
+  const frontendBaseUrl = `http://${frontendHost}:${frontendPort}`;
+
+  const backendServer = spawn(npmCmd, ['run', 'dev'], {
+    cwd: new URL('../../server/', import.meta.url),
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      MYSQL_ENABLED: 'false',
+      PORT: String(backendPort),
+      FRONTEND_ORIGIN: frontendBaseUrl,
+    },
+  });
+
+  const frontendServer = spawn(
     npmCmd,
-    ['run', 'dev', '--', '--port', String(port), '--host', host, '--strictPort'],
+    ['run', 'dev', '--', '--port', String(frontendPort), '--host', frontendHost, '--strictPort'],
     {
       stdio: 'inherit',
-      env: process.env,
+      env: {
+        ...process.env,
+        VITE_API_BASE_URL: `${backendBaseUrl}/api/v1`,
+        VITE_WS_URL: `ws://${backendHost}:${backendPort}/ws`,
+      },
     },
   );
 
-  let exited = false;
-  devServer.on('exit', () => {
-    exited = true;
-  });
-
   try {
-    await waitForPort({ host, port, timeoutMs });
-
-    if (exited) {
-      throw new Error('Dev server exited before becoming ready');
-    }
+    await waitForPort({ host: backendHost, port: backendPort, timeoutMs });
+    await waitForPort({ host: frontendHost, port: frontendPort, timeoutMs });
 
     const playwrightArgs = process.argv.slice(2);
     const testProc = spawn(npxCmd, ['playwright', 'test', ...playwrightArgs], {
       stdio: 'inherit',
       env: {
         ...process.env,
-        PLAYWRIGHT_TEST_BASE_URL: `http://${host}:${port}`,
+        PLAYWRIGHT_TEST_BASE_URL: frontendBaseUrl,
+        PLAYWRIGHT_API_BASE_URL: `${backendBaseUrl}/api/v1`,
       },
     });
 
@@ -68,10 +86,12 @@ async function run() {
       testProc.on('exit', (exitCode) => resolve(exitCode ?? 1));
     });
 
-    devServer.kill('SIGTERM');
+    kill(frontendServer);
+    kill(backendServer);
     process.exit(code);
   } catch (error) {
-    devServer.kill('SIGTERM');
+    kill(frontendServer);
+    kill(backendServer);
     console.error('[e2e] failed:', error instanceof Error ? error.message : error);
     process.exit(1);
   }

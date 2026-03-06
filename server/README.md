@@ -25,7 +25,11 @@ Key variables:
 - `MYSQL_ENABLED` (set `false` to run pure in-memory)
 - `AUTO_MIGRATE` (run `sql/init.sql` automatically when MySQL is ready)
 - `APP_SECRET` (used to encrypt credential payloads)
+- `LIVE_MARKET_REFRESH_MS` (poll interval for live Polymarket market data)
+- `LIVE_MARKET_LIMIT` (how many live binary markets to track in the paper trader)
+- `PAPER_STARTING_CASH` (paper account starting balance, default `15000`)
 - `POLY_CLOB_HOST` (default `https://clob.polymarket.com`)
+- `POLY_GAMMA_HOST` (default `https://gamma-api.polymarket.com`)
 - `POLY_CHAIN_ID` (default `137`, supports `137` and `80002`)
 - `POLY_SIGNATURE_TYPE` (default `1`; `0=EOA`, `1=POLY_PROXY`, `2=POLY_GNOSIS_SAFE`)
 - `POLY_PRIVATE_KEY` (required for placing signed orders)
@@ -101,6 +105,20 @@ Limit order payload for `POST /api/v1/trading/order`:
 }
 ```
 
+`GET /api/v1/trading/status` now also returns:
+
+```json
+{
+  "paperTrading": {
+    "mode": "paper",
+    "liveDataConnected": true,
+    "cashBalance": 14820.55,
+    "startingCash": 15000,
+    "totalEquity": 15037.84
+  }
+}
+```
+
 ## 5. WS Channels
 
 WS message envelope:
@@ -133,4 +151,5 @@ npm run build
 ## 7. Notes
 
 - If MySQL credentials are not ready, service automatically falls back to in-memory mode.
+- Strategy execution is paper-only: live Polymarket prices drive the logic, but no real funds are committed unless you explicitly call the real trading endpoints yourself.
 - Port conflict (`EADDRINUSE`) means another process is already using your configured `PORT`.

@@ -7,6 +7,7 @@ import {
   placePolymarketLimitOrder,
   testPolymarketAuth,
 } from '../../connectors/polymarket/client.js';
+import { appStore } from '../../shared/store.js';
 
 export const tradingRouter = Router();
 
@@ -22,7 +23,13 @@ const placeOrderSchema = z.object({
 
 tradingRouter.get('/status', async (_req, res) => {
   const status = await getPolymarketRuntimeStatus();
-  res.json({ success: true, data: status });
+  res.json({
+    success: true,
+    data: {
+      ...status,
+      paperTrading: appStore.getPaperTradingStatus(),
+    },
+  });
 });
 
 tradingRouter.post('/auth/test', async (_req, res) => {

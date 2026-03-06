@@ -29,8 +29,12 @@ export const env = {
 
   appSecret: process.env.APP_SECRET ?? 'insecure-dev-secret',
   tickIntervalMs: toNumber(process.env.TICK_INTERVAL_MS, 1000),
+  liveMarketRefreshMs: toNumber(process.env.LIVE_MARKET_REFRESH_MS, 5000),
+  liveMarketLimit: toNumber(process.env.LIVE_MARKET_LIMIT, 12),
+  paperStartingCash: toNumber(process.env.PAPER_STARTING_CASH, 15000),
 
   polyClobHost: process.env.POLY_CLOB_HOST ?? 'https://clob.polymarket.com',
+  polyGammaHost: process.env.POLY_GAMMA_HOST ?? 'https://gamma-api.polymarket.com',
   polyChainId: toNumber(process.env.POLY_CHAIN_ID, 137),
   polySignatureType: toNumber(process.env.POLY_SIGNATURE_TYPE, 1),
   polyPrivateKey: process.env.POLY_PRIVATE_KEY ?? '',

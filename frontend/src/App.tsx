@@ -132,6 +132,30 @@ type CredentialStatus = {
   updatedAt?: number;
 };
 
+type PaperTradingStatus = {
+  mode: 'paper';
+  liveDataConnected: boolean;
+  lastSyncAt: number | null;
+  lastLatencyMs: number | null;
+  source: 'gamma-api' | 'seed';
+  marketCount: number;
+  cashBalance: number;
+  startingCash: number;
+  totalEquity: number;
+};
+
+type TradingStatus = {
+  configured: boolean;
+  hasCredentials: boolean;
+  hasPrivateKey: boolean;
+  hasFunderAddress: boolean;
+  canTrade: boolean;
+  host: string;
+  chainId: number;
+  signatureType: number;
+  paperTrading: PaperTradingStatus;
+};
+
 type DashboardSummary = {
   totalProfit: number;
   weeklyProfit: number;
@@ -328,6 +352,11 @@ function formatCompact(value: number): string {
   return `$${value.toFixed(0)}`;
 }
 
+function formatDateTime(value: number | null | undefined): string {
+  if (!value) return 'Waiting for first sync';
+  return new Date(value).toLocaleString();
+}
+
 function strategyTitle(tag: StrategyTag): string {
   if (tag === 'Arbitrage') return 'Math Parity Arbitrage';
   return tag;
@@ -368,6 +397,7 @@ export default function App() {
   const [riskEvents, setRiskEvents] = useState<RiskEvent[]>([]);
 
   const [credentialStatus, setCredentialStatus] = useState<CredentialStatus>({ provider: 'polymarket', configured: false });
+  const [tradingStatus, setTradingStatus] = useState<TradingStatus | null>(null);
   const [keyIdInput, setKeyIdInput] = useState('');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [secretInput, setSecretInput] = useState('');
@@ -415,6 +445,7 @@ export default function App() {
         requestJson<SystemMetric[]>('/system/metrics?window=5m'),
         requestJson<SystemLog[]>('/system/logs?limit=200'),
         requestJson<CredentialStatus>('/settings/credentials/polymarket'),
+        requestJson<TradingStatus>('/trading/status'),
         requestJson<{ state: EngineState }>('/engine/state'),
       ]);
 
@@ -464,7 +495,10 @@ export default function App() {
         setCredentialStatus(tasks[11].value);
       }
       if (tasks[12].status === 'fulfilled') {
-        setEngineState(tasks[12].value.state);
+        setTradingStatus(tasks[12].value);
+      }
+      if (tasks[13].status === 'fulfilled') {
+        setEngineState(tasks[13].value.state);
       }
     }
 
@@ -638,6 +672,9 @@ export default function App() {
         setSecretInput('');
         setPassphraseInput('');
       }
+
+      const nextTradingStatus = await requestJson<TradingStatus>('/trading/status');
+      setTradingStatus(nextTradingStatus);
     } catch {
       setApiError('Save failed. Please check backend connectivity and payload values.');
     } finally {
@@ -665,8 +702,8 @@ export default function App() {
               <Cpu size={20} />
             </div>
             <div>
-              <h1 className="font-bold text-zinc-100 tracking-tight">OpenClaw</h1>
-              <p className="text-xs text-emerald-500 font-mono">v3.7-Sonnet Active</p>
+              <h1 className="font-bold text-zinc-100 tracking-tight">OpenClaw PolyMarket</h1>
+              <p className="text-xs text-emerald-500 font-mono">gpt-5.4 high</p>
             </div>
           </div>
 
@@ -779,7 +816,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-xl flex flex-col shadow-sm overflow-hidden">
+                  <div data-testid="recent-fills-panel" className="bg-zinc-900/40 border border-zinc-800/80 rounded-xl flex flex-col shadow-sm overflow-hidden">
                     <div className="p-4 border-b border-zinc-800/80 bg-zinc-900/50">
                       <h3 className="text-sm font-medium text-zinc-100 flex items-center gap-2">
                         <ArrowRightLeft size={16} className="text-zinc-400" /> Recent Fills
@@ -791,7 +828,7 @@ export default function App() {
                       ) : (
                         <div className="divide-y divide-zinc-800/50">
                           {recentFills.map((fill) => (
-                            <div key={fill.id} className="p-3 hover:bg-zinc-800/30 transition-colors flex justify-between items-center text-sm">
+                            <div data-testid="recent-fill-row" key={fill.id} className="p-3 hover:bg-zinc-800/30 transition-colors flex justify-between items-center text-sm">
                               <div>
                                 <div className="font-medium text-zinc-200">{fill.market}</div>
                                 <div className="text-xs text-zinc-500 font-mono">{fill.time}</div>
@@ -851,7 +888,7 @@ export default function App() {
                         </thead>
                         <tbody>
                           {positions.map((position) => (
-                            <tr key={position.id} className="border-b border-zinc-800/30 hover:bg-zinc-800/20">
+                            <tr data-testid="position-row" key={position.id} className="border-b border-zinc-800/30 hover:bg-zinc-800/20">
                               <td className="px-4 py-4 font-medium text-zinc-200">{position.market}</td>
                               <td className="px-4 py-4">
                                 <span className={`px-2 py-1 rounded text-xs font-medium ${position.side === 'Yes' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
@@ -972,13 +1009,58 @@ export default function App() {
                     </div>
 
                     <div className="space-y-4 pt-4 border-t border-zinc-800/50">
+                      <h3 className="text-sm font-medium text-zinc-300 uppercase tracking-wider">Execution Mode</h3>
+                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <div className="text-xs uppercase tracking-[0.24em] text-emerald-400">Paper Trading</div>
+                            <div className="mt-1 text-sm text-zinc-300">
+                              Live Polymarket prices drive the strategy, but fills only hit the local simulated account.
+                            </div>
+                          </div>
+                          <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                            {tradingStatus?.paperTrading.mode?.toUpperCase() ?? 'PAPER'}
+                          </div>
+                        </div>
+                        <div className="mt-4 grid gap-3 md:grid-cols-2">
+                          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
+                            <div className="text-[11px] uppercase tracking-[0.22em] text-zinc-500">Live Feed</div>
+                            <div data-testid="paper-feed-status" className={`mt-1 text-sm font-medium ${tradingStatus?.paperTrading.liveDataConnected ? 'text-emerald-400' : 'text-amber-400'}`}>
+                              {tradingStatus?.paperTrading.liveDataConnected ? 'Connected' : 'Reconnecting'}
+                            </div>
+                            <div className="mt-1 text-xs text-zinc-500">
+                              {tradingStatus?.paperTrading.source ?? 'seed'} · {tradingStatus?.paperTrading.marketCount ?? liveMarkets.length} markets
+                            </div>
+                          </div>
+                          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
+                            <div className="text-[11px] uppercase tracking-[0.22em] text-zinc-500">Paper Account</div>
+                            <div className="mt-1 text-sm font-medium text-zinc-200">
+                              {formatMoney(tradingStatus?.paperTrading.totalEquity ?? totalEquity)}
+                            </div>
+                            <div className="mt-1 text-xs text-zinc-500">
+                              Cash {formatMoney(tradingStatus?.paperTrading.cashBalance ?? totalEquity)} / Start {formatMoney(tradingStatus?.paperTrading.startingCash ?? 15000)}
+                            </div>
+                          </div>
+                          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 md:col-span-2">
+                            <div className="text-[11px] uppercase tracking-[0.22em] text-zinc-500">Last Sync</div>
+                            <div className="mt-1 text-sm text-zinc-300">{formatDateTime(tradingStatus?.paperTrading.lastSyncAt)}</div>
+                            <div className="mt-1 text-xs text-zinc-500">
+                              Latency {tradingStatus?.paperTrading.lastLatencyMs ?? latestMetric.latency} ms
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 pt-4 border-t border-zinc-800/50">
                       <h3 className="text-sm font-medium text-zinc-300 uppercase tracking-wider">API Credentials</h3>
-                      <div className="text-xs text-zinc-500">
+                      <div data-testid="credential-status" className="text-xs text-zinc-500">
                         Status: {credentialStatus.configured ? 'Configured' : 'Not configured'}
                       </div>
                       <div>
                         <label className="block text-xs text-zinc-500 mb-1">Polymarket Key ID</label>
                         <input
+                          data-testid="key-id-input"
                           type="text"
                           value={keyIdInput}
                           onChange={(event) => setKeyIdInput(event.target.value)}
@@ -989,6 +1071,7 @@ export default function App() {
                       <div>
                         <label className="block text-xs text-zinc-500 mb-1">Polymarket API Key</label>
                         <input
+                          data-testid="api-key-input"
                           type="password"
                           value={apiKeyInput}
                           onChange={(event) => setApiKeyInput(event.target.value)}
@@ -999,6 +1082,7 @@ export default function App() {
                       <div>
                         <label className="block text-xs text-zinc-500 mb-1">Polymarket API Secret</label>
                         <input
+                          data-testid="api-secret-input"
                           type="password"
                           value={secretInput}
                           onChange={(event) => setSecretInput(event.target.value)}
@@ -1009,6 +1093,7 @@ export default function App() {
                       <div>
                         <label className="block text-xs text-zinc-500 mb-1">Polymarket Passphrase</label>
                         <input
+                          data-testid="passphrase-input"
                           type="password"
                           value={passphraseInput}
                           onChange={(event) => setPassphraseInput(event.target.value)}
@@ -1017,12 +1102,13 @@ export default function App() {
                         />
                       </div>
                       <p className="text-xs text-zinc-500">
-                        Save requires all three values together: apiKey, secret, and passphrase.
+                        Save requires all three values together: apiKey, secret, and passphrase. These keys do not switch the app into real-money mode.
                       </p>
                     </div>
 
                     <div className="pt-4 border-t border-zinc-800/50 flex justify-end">
                       <button
+                        data-testid="save-settings"
                         onClick={() => void handleSaveSettings()}
                         disabled={settingsSaving}
                         className="px-4 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-sm font-medium hover:bg-emerald-500/30 disabled:opacity-50"
@@ -1091,7 +1177,7 @@ export default function App() {
                       const spread = Math.abs(1.0 - total).toFixed(3);
 
                       return (
-                        <div key={market.id} className="bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-5 flex flex-col relative overflow-hidden shadow-sm">
+                        <div data-testid="market-card" key={market.id} className="bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-5 flex flex-col relative overflow-hidden shadow-sm">
                           {isArb && <div className="absolute top-0 left-0 w-full h-1 bg-purple-500 animate-pulse"></div>}
                           <div className="flex justify-between items-start mb-4">
                             <h3 className="text-lg font-semibold text-zinc-100">{market.name}</h3>

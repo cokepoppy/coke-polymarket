@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('system tabs render logs and health panels', async ({ page }) => {
+test('system tabs render health and log panels', async ({ page }) => {
   await page.goto('/');
 
   await page.getByRole('button', { name: 'System Health' }).click();
@@ -9,5 +9,5 @@ test('system tabs render logs and health panels', async ({ page }) => {
 
   await page.getByRole('button', { name: 'System Logs' }).click();
   await expect(page.getByText('openclaw-agent-tty1')).toBeVisible();
-  await expect(page.getByText('Connected to Polymarket API Node')).toBeVisible();
+  await expect(page.getByText('Paper trader booted. Waiting for live Polymarket feed.')).toBeVisible();
 });
